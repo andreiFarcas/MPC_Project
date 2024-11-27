@@ -29,10 +29,11 @@ function [dx, F1, F2, e_prev, e_int, e_prev_time] = closedLoopDynamics(t, x, u, 
     F1 = max(0, F1);
     F2 = max(0, F2);
 
-    u = [F1; F2; u(3); u(4)];
+    u = [F1; F2];
+    d = [0; 0];
 
     % Compute system states dx
-    dx = ModifiedFourTankSystem(t, x, u, [], p);
+    dx = ModifiedFourTankSystem(t, x, u, d, p);
     
     % We try to ensure always dx is a column vector
     dx = dx(:);

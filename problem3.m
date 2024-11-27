@@ -28,13 +28,13 @@ F1 = 300;   % [cm^3/s] Flow rate from pump 1
 F2 = 300;   % [cm^3/s] Flow rate from pump 2
 F3 = 0;     % [cm^3/s] Flow rate disturbance to tank 3
 F4 = 0;     % [cm^3/s] Flow rate disturbance to tank 4
-u = [F1; F2; F3; F4];
+u = [F1; F2];
 
 % Initial guess for the steady-state state variables (liquid masses)
 x0_guess = [5000; 5000; 5000; 5000];
 
 % Wrap the function for fsolve
-steadyStateFunction = @(x) ModifiedFourTankSystem(0, x, u, [], p);
+steadyStateFunction = @(x) ModifiedFourTankSystem(0, x, u, [F3; F4], p);
 
 % Solve for steady state
 options = optimoptions('fsolve', 'Display', 'iter', 'FunctionTolerance', 1e-8);
@@ -66,10 +66,10 @@ F4 = 0;
 
 x0 = x_steady;
 
-u = [F1; F2; F3; F4];
+u = [F1; F2];
 
 % Simulating
-d = [];
+d = [F3; F4];
 
 % Run simulation using ode15s
 [T, X] = ode15s(@(t, x) ModifiedFourTankSystem(t, x, u, d, p), [t0 t_f], x0);
@@ -245,8 +245,8 @@ title('H1 Step Response with PID Controller');
 %% Closed-Loop Simulations on the nonlinear model
 
 % Reference tank levels [cm]
-h1_ref = 44.54; % Desired height for Tank 1
-h2_ref = 29.98; % Desired height for Tank 2
+h1_ref = h_steady(1) + 25/100 * h_steady(1); % 5% increase from steady state
+h2_ref = h_steady(2) + 25/100 * h_steady(2);
 
 % Basically these heigths are steady state ones
 
