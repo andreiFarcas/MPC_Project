@@ -245,7 +245,7 @@ title('H1 Step Response with PID Controller');
 %% Closed-Loop Simulations on the nonlinear model
 
 % Reference tank levels [cm]
-h1_ref = h_steady(1) + 25/100 * h_steady(1); % 5% increase from steady state
+h1_ref = h_steady(1) + 25/100 * h_steady(1); % 25% increase from steady state
 h2_ref = h_steady(2) + 25/100 * h_steady(2);
 
 % Basically these heigths are steady state ones
