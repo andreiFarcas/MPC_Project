@@ -24,7 +24,7 @@ nu = size(Gg, 2); % nr of inputs
 
 % Noise Covariances
 Q = 0.01 * eye(size(Gv, 2)); % Process noise covariance
-R = 0.00001 * eye(ny); % Measurement noise covariance (obs smaller values improve the static model)
+R = 0.00001 * eye(ny); % Measurement noise covariance
 
 % Initial Conditions
 x_true = zeros(nx, 1); % will store the real states
