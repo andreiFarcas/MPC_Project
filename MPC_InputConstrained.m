@@ -1,6 +1,6 @@
 %% 
 clc;
-clear variables
+clear variables; close all;
 
 %--------------------------------------------------------
 % Parameters Definition
@@ -29,7 +29,7 @@ m10 = 5000; m20 = 5000; m30 = 5000; m40 = 5000;
 
 t0 = 0.0;   % [s] Initial time
 tend = 20*60; % [s] Final time
-Ts = 10; % [s] sampling time
+Ts = 1; % [s] sampling time
 t = t0:Ts:tend;               % [s] Sample instants
 
 
@@ -48,9 +48,9 @@ nx = size(Ff, 1); % nr. of states
 ny = size(Cc, 1); % nr of outputs
 nu = size(Gg, 2); % nr of inputs
 
-N = 10; % prediction horizon in time steps
+N = 2; % prediction horizon in time steps
 
-% Penalisation matrices Qz and Hs
+% Penalisation matrice Qz (and Hs
 Qz = 5000000*blkdiag(eye(nu), zeros(nu*(N-1)));
 
 central_diag = 2 * ones(1, nu*N); 
@@ -86,8 +86,8 @@ end
 P_dynamic = eye(nx);
 
 % Input constraints
-u_min = [-50; -50];     % Minimum input constraints
-u_max = [50; 50]; % Maximum input constraints
+u_min = [-30; -30];     % Minimum input constraints
+u_max = [30; 30]; % Maximum input constraints
 
 % Simulation loop
 for k = 1:num_steps
@@ -117,20 +117,6 @@ end
 % Plot results
 time = 1:num_steps;
 
-% Outputs vs Reference
-figure;
-for i = 1:ny
-    subplot(ny, 1, i);
-    plot(time, z_ref_full(i, :), 'r--', 'LineWidth', 1.5); hold on;
-    plot(time, y_hist(i, :), 'b', 'LineWidth', 1.5);
-    title(['Output y_', num2str(i)]);
-    legend('Reference', 'System Output');
-    xlabel('Time Step');
-    ylabel(['y_', num2str(i)]);
-    % axis([0,num_steps,-3,3])
-    grid on;
-end
-
 figure;
 for i = 1:nx
     subplot(nx, 1, i);
@@ -140,24 +126,13 @@ for i = 1:nx
     legend('True State', 'Estimated State');
     xlabel('Time Step');
     ylabel(['x_', num2str(i)]);
-    % axis([0,num_steps,-1,10])
-    grid on;
-end
-
-figure;
-for i = 1:nu
-    subplot(nu, 1, i);
-    plot(time, u_hist(i, :), 'k', 'LineWidth', 1.5);
-    title(['Control Input u_', num2str(i)]);
-    xlabel('Time Step');
-    ylabel(['u_', num2str(i)]);
     grid on;
 end
 
 % Add unconstrained inputs to the plot for comparison
 % Input constraints
-u_min = [-5000; -5000];     % Minimum input constraints
-u_max = [5000; 5000]; % Maximum input constraints
+u_min = [-50000; -50000];     % Minimum input constraints
+u_max = [50000; 50000]; % Maximum input constraints
 
 % Simulation loop
 for k = 1:num_steps
@@ -184,12 +159,26 @@ for k = 1:num_steps
     u_hist_2(:, k) = u0;
 end
 
+% Outputs vs Reference
+figure;
+for i = 1:ny
+    subplot(ny, 1, i);
+    plot(time, z_ref_full(i, :), 'r--', 'LineWidth', 1.5); hold on;
+    plot(time, y_hist(i, :), 'b', 'LineWidth', 1.5);
+    plot(time, y_hist_2(i, :), 'k--', 'LineWidth',1.5);
+    title(['Output y_', num2str(i)]);
+    legend('Reference', 'System Output Input Constrained', 'System Output Unconstrained');
+    xlabel('Time Step');
+    ylabel(['y_', num2str(i)]);
+    grid on;
+end
+
 % Plot Control Inputs Comparison (Constrained vs Unconstrained)
 figure;
 for i = 1:nu
     subplot(nu, 1, i);
     plot(time, u_hist(i, :), 'k', 'LineWidth', 1.5); hold on;  % Constrained
-    plot(time, u_hist_2(i, :), 'r--', 'LineWidth', 1.5);  % Unconstrained
+    plot(time, u_hist_2(i, :), 'r--', 'LineWidth', 1);  % Unconstrained
     title(['Control Input u_', num2str(i)]);
     xlabel('Time Step');
     ylabel(['u_', num2str(i)]);

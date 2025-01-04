@@ -91,14 +91,14 @@ poles = pole(G_stochastic);
 taus = -1 ./ real(poles) % Time constants
 
 %% 5.4 Discrete-time state space models
-tau_min = min(taus);
-Ts = tau_min/10; %[s]
+tau_min = min(taus)
+Ts = tau_min/10 %[s]
 
-Ff = expm(A * Ts);  
-Gg = (expm(A * Ts) - eye(size(A))) / A * B; 
-Gv = (expm(A * Ts) - eye(size(A))) / A * Bv;  
-Cc = C;  
-Dd = D;  
+Ff = expm(A * Ts)  
+Gg = (expm(A * Ts) - eye(size(A))) / A * B 
+Gv = (expm(A * Ts) - eye(size(A))) / A * Bv  
+Cc = C  
+Dd = D  
 
 
 %% 5.5 Markov parameters

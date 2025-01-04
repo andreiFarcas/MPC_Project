@@ -34,7 +34,7 @@ function u0 = Regulator_InputConstrained(A, B, Bv, C, D, N, xinit, uprev, zref, 
     Muprev(1:m, :) = eye(m);
     
     % Compute Mxo, Mr, Md
-    Mx0 = gamma * Qz * phi; % shape (mN x n)
+    Mx0 = gamma' * Qz * phi; % shape (mN x n)
     Mr = -gamma' * Qz; % shape (mN x pN)
     Md = gamma' * Qz * gamma_d; % shape (mN x qN)
     
@@ -43,14 +43,13 @@ function u0 = Regulator_InputConstrained(A, B, Bv, C, D, N, xinit, uprev, zref, 
     grad = Mx0 * xinit + Mr * zref + Muprev * uprev + Md * dist;  % shape (mN x 1)
     
     % Constraints on U
-    % Lower and upper bounds for all time steps
-    Umin = repmat(u_min, N, 1); 
-    Umax = repmat(u_max, N, 1); 
+    % Repeat the constraints over the prediction horizon (N steps):
+    Umin = repmat(u_min, N, 1);  % Shape: (m * N) x 1
+    Umax = repmat(u_max, N, 1);  
     
     % Define G_u and h_u for box constraints
     %G_u = [eye(m * N); -eye(m * N)]; % shape (2mN x mN)
     G_u = eye(m * N);
-    h_u = [Umax; -Umin]; % shape (2mN x 1)
    
     % Solve the QP
     [U, info] = qpsolver(H, grad, G_u, [], Umin, Umax, Umin, Umax, 1);

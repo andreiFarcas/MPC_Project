@@ -35,7 +35,7 @@ function u0 = Regulator(A,B,Bv,C,D,N,xinit,uprev,zref,dist,Qz,Hs)
     Muprev(2,2) = 1;
     
     % Compute Mxo, Mr, Md
-    Mx0 = gamma*Qz*phi; % shape (mN x n)
+    Mx0 = gamma'*Qz*phi; % shape (mN x n)
     Mr = -gamma'*Qz; % shape (mN x pN)
     Md = gamma'*Qz*gamma_d;  % shape (mN x qN)
     

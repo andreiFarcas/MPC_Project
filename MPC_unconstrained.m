@@ -1,6 +1,6 @@
 %% 
 clc;
-clear variables
+clear variables; close all
 
 %--------------------------------------------------------
 % Parameters Definition
@@ -51,7 +51,7 @@ nu = size(Gg, 2); % nr of inputs
 N = 10; % prediction horizon in time steps
 
 % Penalisation matrices Qz and Hs
-Qz = 5000000*blkdiag(eye(nu), zeros(nu*(N-1)));
+Qz = 3e5*blkdiag(eye(nu), zeros(nu*(N-1)));
 
 central_diag = 2 * ones(1, nu*N); 
 central_diag(N) = 1;
@@ -59,11 +59,11 @@ inf_diag = -1 * ones(1, nu*N-1);
 sup_diag = -1 * ones(1, nu*N-1);        
 Hs = diag(central_diag) + diag(inf_diag, -1) + diag(sup_diag, 1);
 Hs(nu*N,nu*N)=1; % shape (nuN x nuN) 
-Hs = Hs*50;
+Hs = Hs*1;
 
 % Noise covariances
-Q = eye(size(Gv, 2)); % Process noise 
-R = eye(ny); % Measurement noise 
+Q = 0.01*eye(size(Gv, 2)); % Process noise 
+R = 0.0001*eye(ny); % Measurement noise 
 
 % Initialize parameters
 x_true = zeros(nx, 1); % True state
@@ -73,13 +73,13 @@ dist = zeros(size(Gv, 2) * N, 1); % Disturbance (zero for now)
 
 % Reference will have 3 different setpoints
 z_ref_full = zeros(ny, num_steps);
-for k = 1:num_steps
+for k = 1:num_steps+N
     if k <= 30
-        z_ref_full(:, k) = [1; 0];
+        z_ref_full(:, k) = [3; 0];
     elseif k <= 60
         z_ref_full(:, k) = [0; 1];
     else
-        z_ref_full(:, k) = [0.5; 0.5];
+        z_ref_full(:, k) = [-0.5; 0.5];
     end
 end
 
@@ -92,8 +92,11 @@ for k = 1:num_steps
     y = Cc * x_true; % Measurement
     
     % Reference for this step
-    z_ref = repmat(z_ref_full(:, k), N, 1); % Extend reference to prediction horizon
-    
+    z_ref = z_ref_full(:,k);
+    for i = 1:N-1
+        z_ref = [z_ref;z_ref_full(:, k+i)]; % Extend reference to prediction horizon
+    end
+
     % Dynamic Kalman Filter
     [x_hat, P_dynamic] = dynamicKalmanFilter(Ff, Gg, Gv, Cc, Q, R, y, u_prev, x_hat, P_dynamic);
     
@@ -117,7 +120,7 @@ time = 1:num_steps;
 figure;
 for i = 1:ny
     subplot(ny, 1, i);
-    plot(time, z_ref_full(i, :), 'r--', 'LineWidth', 1.5); hold on;
+    plot(time, z_ref_full(i, 1:num_steps), 'r--', 'LineWidth', 1.5); hold on;
     plot(time, y_hist(i, :), 'b', 'LineWidth', 1.5);
     title(['Output y_', num2str(i)]);
     legend('Reference', 'System Output');
@@ -172,7 +175,7 @@ Dd = 0; % No direct feedthrough
 N = 10; % prediction horizon in time steps
 
 % Penalisation matrices Qz and Hs
-Qz = 5000000*blkdiag(eye(nu), zeros(nu*(N-1)));
+Qz = 3e5*blkdiag(eye(nu), zeros(nu*(N-1)));
 
 central_diag = 2 * ones(1, nu*N); 
 central_diag(N) = 1;
@@ -180,7 +183,7 @@ inf_diag = -1 * ones(1, nu*N-1);
 sup_diag = -1 * ones(1, nu*N-1);        
 Hs = diag(central_diag) + diag(inf_diag, -1) + diag(sup_diag, 1);
 Hs(nu*N,nu*N)=1; % shape (nuN x nuN) 
-Hs = Hs*50;
+Hs = Hs*1;
 
 % Noise Covariances
 Q = 0.001 * eye(size(Gv, 2)); % Process noise 
@@ -194,13 +197,13 @@ dist = zeros(size(Gv, 2) * N, 1); % Disturbance (zero for now)
 
 % Reference will have 3 different setpoints
 z_ref_full = zeros(ny, num_steps);
-for k = 1:num_steps
+for k = 1:num_steps+N
     if k <= 30
-        z_ref_full(:, k) = [1; 0];
+        z_ref_full(:, k) = [0; 2];
     elseif k <= 60
-        z_ref_full(:, k) = [0; 1];
+        z_ref_full(:, k) = [2; 1];
     else
-        z_ref_full(:, k) = [0.5; 0.5];
+        z_ref_full(:, k) = [0; 0.5];
     end
 end
 
@@ -215,8 +218,10 @@ for k = 1:num_steps
     y = Cc * x_true + v_k; % Measurement
     
     % Reference for this step
-    z_ref = repmat(z_ref_full(:, k), N, 1); % Extend reference to prediction horizon
-    
+    z_ref = z_ref_full(:,k);
+    for i = 1:N-1
+        z_ref = [z_ref;z_ref_full(:, k+i)]; % We need to extend reference to prediction horizon
+    end
     % Dynamic Kalman Filter
     [x_hat, P_dynamic] = dynamicKalmanFilter(Ff, Gg, Gv, Cc, Q, R, y, u_prev, x_hat, P_dynamic);
     
@@ -240,13 +245,12 @@ time = 1:num_steps;
 figure;
 for i = 1:ny
     subplot(ny, 1, i);
-    plot(time, z_ref_full(i, :), 'r--', 'LineWidth', 1.5); hold on;
+    plot(time, z_ref_full(i, 1:num_steps), 'r--', 'LineWidth', 1.5); hold on;
     plot(time, y_hist(i, :), 'b', 'LineWidth', 1.5);
     title(['Output y_', num2str(i)]);
     legend('Reference', 'System Output');
     xlabel('Time Step');
     ylabel(['y_', num2str(i)]);
-    % axis([0,num_steps,-3,3])
     grid on;
 end
 
