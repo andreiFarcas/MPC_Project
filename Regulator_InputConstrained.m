@@ -1,4 +1,4 @@
-function u0 = Regulator_InputConstrained(A, B, Bv, C, D, N, xinit, uprev, zref, dist, Qz, Hs, u_min, u_max)
+function u0 = Regulator_InputConstrained(A, B, Bv, C, D, N, xinit, uprev, zref, dist, Qz, Hs, u_min, u_max,delta_u_min,delta_u_max)
     n = length(A); % Number of state variables
     m = length(B(1,:)); % Number of control variables
     o = length(C(:,1)); % Number of output variables
@@ -46,13 +46,31 @@ function u0 = Regulator_InputConstrained(A, B, Bv, C, D, N, xinit, uprev, zref, 
     % Repeat the constraints over the prediction horizon (N steps):
     Umin = repmat(u_min, N, 1);  % Shape: (m * N) x 1
     Umax = repmat(u_max, N, 1);  
-    
-    % Define G_u and h_u for box constraints
-    %G_u = [eye(m * N); -eye(m * N)]; % shape (2mN x mN)
-    G_u = eye(m * N);
-   
+       
+    % Constraints on DeltaU
+    % G_u = [eye(m * N); -eye(m * N)]; % shape (2mN x mN)
+    % G_u = eye(m * N);
+    Delta_u_min = repmat(delta_u_min, N, 1);
+    Delta_u_max = repmat(delta_u_max, N, 1);
+
+    Lambda = zeros(m * N, m * N); % Shape: (mN x mN)
+    for i = 1:N
+        if i == 1
+            Lambda((i-1)*m+1:i*m, (i-1)*m+1:i*m) = eye(m); % First step
+        else
+            Lambda((i-1)*m+1:i*m, (i-2)*m+1:(i-1)*m) = -eye(m); % -u[k-1]
+            Lambda((i-1)*m+1:i*m, (i-1)*m+1:i*m) = eye(m); % u[k]
+        end
+    end    
+
     % Solve the QP
-    [U, info] = qpsolver(H, grad, G_u, [], Umin, Umax, Umin, Umax, 1);
+    [U, info] = qpsolver(H, grad, Lambda, [], Umin, Umax, Delta_u_min, Delta_u_max, 1);
+
+    if isempty(U) || numel(U) < m
+    error('QP solver did not return a valid solution.');
+    end
+
+   
     
     %options = optimoptions('quadprog', 'Display', 'none'); % Optional settings
     %U = quadprog(H, grad, G_u, h_u, [], [], [], [], [], options);

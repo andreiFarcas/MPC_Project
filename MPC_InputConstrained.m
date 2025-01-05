@@ -75,19 +75,21 @@ dist = zeros(size(Gv, 2) * N, 1); % Disturbance (zero for now)
 z_ref_full = zeros(ny, num_steps);
 for k = 1:num_steps
     if k <= 30
-        z_ref_full(:, k) = [1; 0];
+        z_ref_full(:, k) = [10; 0];
     elseif k <= 60
-        z_ref_full(:, k) = [0; 1];
+        z_ref_full(:, k) = [0; 10];
     else
-        z_ref_full(:, k) = [0.5; 0.5];
+        z_ref_full(:, k) = [5; 5];
     end
 end
 
 P_dynamic = eye(nx);
 
 % Input constraints
-u_min = [-30; -30];     % Minimum input constraints
-u_max = [30; 30]; % Maximum input constraints
+u_min = [0; 0];     % Minimum input constraints
+u_max = [500; 500]; % Maximum input constraints
+delta_u_min = [-200; -200]; 
+delta_u_max = [200; 200];
 
 % Simulation loop
 for k = 1:num_steps
@@ -102,7 +104,7 @@ for k = 1:num_steps
     [x_hat, P_dynamic] = dynamicKalmanFilter(Ff, Gg, Gv, Cc, Q, R, y, u_prev, x_hat, P_dynamic);
     
     % Use the regulator function to compute the optimal control
-    u0 = Regulator_InputConstrained(Ff, Gg, Gv, Cc, Dd, N, x_hat, u_prev, z_ref, dist, Qz, Hs, u_min, u_max);
+    u0 = Regulator_InputConstrained(Ff, Gg, Gv, Cc, Dd, N, x_hat, u_prev, z_ref, dist, Qz, Hs, u_min, u_max,delta_u_min,delta_u_max);
     
     % Apply control input to the system
     u_prev = u0; % Save for the next iteration
@@ -129,29 +131,31 @@ for i = 1:nx
     grid on;
 end
 
-% Add unconstrained inputs to the plot for comparison
-% Input constraints
-u_min = [-50000; -50000];     % Minimum input constraints
-u_max = [50000; 50000]; % Maximum input constraints
 
+% Add unconstrained inputs to the plot for comparison
+% No input constraints
+u_min = -inf * ones(nu, 1);      
+u_max = inf * ones(nu, 1);       
+delta_u_min = -inf * ones(nu, 1); 
+delta_u_max = inf * ones(nu, 1);  
 % Simulation loop
 for k = 1:num_steps
     % True system dynamics
     x_true = Ff * x_true + Gg * u_prev;
     y = Cc * x_true; % Measurement
-    
+
     % Reference for this step
     z_ref = repmat(z_ref_full(:, k), N, 1); % Extend reference to prediction horizon
-    
+
     % Dynamic Kalman Filter
     [x_hat, P_dynamic] = dynamicKalmanFilter(Ff, Gg, Gv, Cc, Q, R, y, u_prev, x_hat, P_dynamic);
-    
+
     % Use the regulator function to compute the optimal control
-    u0 = Regulator_InputConstrained(Ff, Gg, Gv, Cc, Dd, N, x_hat, u_prev, z_ref, dist, Qz, Hs, u_min, u_max);
-    
+    u0 = Regulator_InputConstrained(Ff, Gg, Gv, Cc, Dd, N, x_hat, u_prev, z_ref, dist, Qz, Hs, u_min, u_max,delta_u_min,delta_u_max);
+
     % Apply control input to the system
     u_prev = u0; % Save for the next iteration
-    
+
     % Store results for plotting
     x_true_hist_2(:, k) = x_true;
     x_hat_hist_2(:, k) = x_hat;
